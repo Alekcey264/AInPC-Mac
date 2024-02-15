@@ -14,7 +14,6 @@ class GraphsWindow(QMainWindow):
         self.graphs_thread_initialize.initializing_graphs_signal.connect(self.fill_values_list_on_init, Qt.ConnectionType.QueuedConnection)
     
         self.graphs_thread = GraphsThread(self.password_for_work)
-        self.graphs_thread.start()
         self.graphs_thread.graphs_signal.connect(self.fill_values_list_on_loop)
         
     def show_graphs_splash_screen(self):
@@ -96,6 +95,7 @@ class GraphsWindow(QMainWindow):
                 plot_widget = pyqtgraph.PlotWidget()
                 plot_widget.setMouseEnabled(x = False, y = False)
                 plot_widget.setBackground("w")
+                plot_widget.showGrid(x = True, y = True)
                 plot_widget.setFixedWidth(405)
                 plot_widget.plotItem.setFixedWidth(395)
                 plot_widget.setFixedHeight(220)
@@ -109,18 +109,24 @@ class GraphsWindow(QMainWindow):
                 if graph_counter == values_counter[name_num]:
                     name_num += 1
                     graph_counter = 0
-                plot_widget.plotItem.setLabel('left', 'Значение', color = (0, 0, 0))
-                plot_widget.plotItem.setLabel('bottom', 'Время', color = (0, 0, 0))
+                plot_widget.plotItem.setLabel('bottom', '<b>Время (сек.)<\b>', color = (0, 0, 0))
                 x_axis = plot_widget.getAxis("bottom")
                 x_axis.setStyle(showValues = True)
                 if "температура" in name.lower():
-                    pen = pyqtgraph.mkPen(color = (255, 0, 0))
+                    pen = pyqtgraph.mkPen(color = (255, 0, 0), width = 4.5)
+                    plot_widget.plotItem.setLabel('left', '<b>Значение (\u00B0C)<\b>', color = (0, 0, 0))
                 elif "Частота" in name:
-                    pen = pyqtgraph.mkPen(color = (0, 0, 0))
+                    pen = pyqtgraph.mkPen(color = (0, 0, 0), width = 4.5)
+                    if "ядра" in name:
+                        plot_widget.plotItem.setLabel('left', '<b>Значение (ГГц)<\b>', color = (0, 0, 0))
+                    elif "памяти" in name:
+                        plot_widget.plotItem.setLabel('left', '<b>Значение (МГц)<\b>', color = (0, 0, 0))
                 elif "Загрузка" in name:
-                    pen = pyqtgraph.mkPen(color = (0, 255, 0))
-                else:
-                    pen = pyqtgraph.mkPen(color = (0, 0, 255))
+                    pen = pyqtgraph.mkPen(color = (0, 255, 0), width = 4.5)
+                    plot_widget.plotItem.setLabel('left', '<b>Значение (%)<\b>', color = (0, 0, 0), )
+                elif "Напряжение" in name:
+                    pen = pyqtgraph.mkPen(color = (0, 0, 255), width = 4.5)
+                    plot_widget.plotItem.setLabel('left', '<b>Значение (мВ)<\b>', color = (0, 0, 0), )
                 plotx = plot_widget.plot([], [], pen = pen)
                 plot_widget.viewport().setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, False)
                 self.plot_widgets.append((plot_widget, plotx))
@@ -139,6 +145,7 @@ class GraphsWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         self.update_graphs()
+        self.graphs_thread.start()
 
         self.show()
 
