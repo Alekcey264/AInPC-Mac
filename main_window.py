@@ -552,8 +552,13 @@ class MainWindow(QMainWindow):
     def open_report_window(self):
         self.report_window_code = ReportWindow()
 
+    def stop_thread(self):
+        self.stats_thread.stop()
+
     def closeEvent(self, event):
         self.hide()
         self.stats_thread.running = False
-        self.stats_thread.wait(5000)
-        event.accept()
+        self.timer.stop()
+        self.stop_thread()
+        #self.stats_thread.wait(5000)
+        super().closeEvent(event)

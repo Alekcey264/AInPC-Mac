@@ -170,8 +170,12 @@ class GraphsWindow(QMainWindow):
             if len(graphs_list[i]) > 60:
                 del graphs_list[i][0]
 
+    def stop_thread(self):
+        self.graphs_thread.stop()
+
     def closeEvent(self, event):
         self.hide()
         self.graphs_thread.running = False
-        self.graphs_thread.wait(5000)
-        event.accept()
+        self.stop_thread()
+        #self.stats_thread.wait(5000)
+        super().closeEvent(event)

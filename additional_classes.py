@@ -57,6 +57,9 @@ class StatsThread(QThread):
                     container = [filtered_lines, self.root, self.text]
                     self.stats_signal.emit(container)
 
+    def stop(self):
+        self.terminate()
+
 class InitializingThread(QThread):
     init_signal = pyqtSignal(list)
     def __init__(self, splash, password):
@@ -169,6 +172,9 @@ class GraphsThread(QThread):
                         [memory], [get_average(sensors[3])], [get_average(sensors[4])], sensors[5]]
             self.graphs_signal.emit(container)
 
+    def stop(self):
+        self.terminate()
+
 class InitializingGraphsThread(QThread):
     initializing_graphs_signal = pyqtSignal(list)
     def __init__(self, splash, password):
@@ -278,5 +284,3 @@ class ReportThread(QThread):
                 temp = f"В системе нет информации о {matching_key}, проверьте подключение устройства.\n"
             output += (matching_key + ":\n" + temp + "\n")
         self.report_thread_signal.emit(output)
-
-
