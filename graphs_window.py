@@ -1,21 +1,30 @@
+#Импортируем из остальных файлов проекта необходимые зависимости - классы, функции и модули
 from global_import import *
 from additional_classes import GraphsThread, InitializingGraphsThread
 
-values_list = []
-graphs_list = []
-
+#Создаем окно с графиками
 class GraphsWindow(QMainWindow):
     def __init__(self, password_for_work):
-        self.password_for_work = password_for_work
         super().__init__()
+
+#Создаем переменные и зависимости, используемые в рамках главного окна
+        self.password_for_work = password_for_work
+        self.values_list = []
+        self.graphs_list = []
+        
+#Настраиваем окно, отображающееся во время инициализации программы
         splash_for_graphs = self.show_graphs_splash_screen()
+
+#Настраиваем и запускаем поток, инициализирующий первичные показатели датчиков системы        
         self.graphs_thread_initialize = InitializingGraphsThread(splash_for_graphs, self.password_for_work)
         self.graphs_thread_initialize.start()
         self.graphs_thread_initialize.initializing_graphs_signal.connect(self.fill_values_list_on_init, Qt.ConnectionType.QueuedConnection)
     
+#Создаем поток опроса датчков компонентов системы и "подключаем" его реакцию на готовность обновления
         self.graphs_thread = GraphsThread(self.password_for_work)
         self.graphs_thread.graphs_signal.connect(self.fill_values_list_on_loop)
-        
+    
+#Функция, отображающая окно инициализации
     def show_graphs_splash_screen(self):
         splash_pix = QPixmap(getcwd() + "/recources//graph_icon.png").scaled(QSize(500, 500), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         splash = QSplashScreen(splash_pix, Qt.WindowType.WindowStaysOnTopHint)
@@ -26,41 +35,46 @@ class GraphsWindow(QMainWindow):
         splash.show()
         return splash
 
+#Функция, вычисляющая длину каждого элемента в массиве
     def list_len(self, list_of_lists):
         lenght = 0
         for item in list_of_lists:
             lenght += len(item)
         return lenght
-        
+
+#Функция, обновляющая графики    
     def update_graphs(self):
         if not self.graphs_thread.isRunning():
             self.graphs_thread.start()
         self.sort_values()
         j = 0
         for plot_widget, plot in self.plot_widgets:
-            x_ax = [i for i in range(len(graphs_list[j]))]
-            plot.setData(x_ax, graphs_list[j])
+            x_ax = [i for i in range(len(self.graphs_list[j]))]
+            plot.setData(x_ax, self.graphs_list[j])
             j += 1
 
+#Функция, заполняющая массив данными после получения их из потока
     def fill_values_list_on_loop(self, data):
-        global values_list
-        values_list = data
+        self.values_list = data
         self.update_graphs()
 
+#Функция, заполняющая массив первычными данными с датчиков системы
     def fill_values_list_on_init(self, data):
-        global values_list
-        values_list = data[:-1]
+        self.values_list = data[:-1]
         self.create_graphs_list()
         self.create_graphs_window(data[-1])
 
+#Функция, запускающая появление  окна после процессора иницилизации
     def create_graphs_window(self, splash):
         splash.close()
 
+#Настраиваем вид главного окна
         self.setWindowTitle("AInPC Графики")
         self.setFixedSize(QSize(900, 500))
         palette = QPalette()
         palette.setColor(QPalette.ColorRole.Window, QColor(192, 192, 192))
 
+#Настриваем область отображения графиков
         graph_row_widget = QWidget()
         row_layout = QHBoxLayout()
         scroll_area = QScrollArea(self)
@@ -78,14 +92,14 @@ class GraphsWindow(QMainWindow):
                       "Температура правого вентиляционного отверстия", "Температура чипа NAND")
         self.plot_widgets = []
         n = 0
-        lenght = self.list_len(values_list)
+        lenght = self.list_len(self.values_list)
         if lenght // 2:
             row_count = lenght // 2 + 1
         else:
             row_count = lenght // 2
         name_num = 0
         graph_counter = 0
-        values_counter = [len(item) for item in values_list]
+        values_counter = [len(item) for item in self.values_list]
         for _ in range(0, row_count):
             if n == lenght:
                 break
@@ -100,7 +114,7 @@ class GraphsWindow(QMainWindow):
                 plot_widget.plotItem.setFixedWidth(395)
                 plot_widget.setFixedHeight(220)
                 plot_widget.plotItem.setFixedHeight(215)
-                if name_num in (0, 2, 3, 5) or len(values_list[-1]) != 1:
+                if name_num in (0, 2, 3, 5) or len(self.values_list[-1]) != 1:
                     name = plot_names[name_num] + f" #{graph_counter + 1}"
                 else:
                     name = plot_names[name_num]
@@ -149,6 +163,7 @@ class GraphsWindow(QMainWindow):
 
         self.show()
 
+#Разбираем значения из листа для корректного отображения
     def unparse_list(self, input_list):
         temp_list = []
         for item in input_list:
@@ -156,26 +171,27 @@ class GraphsWindow(QMainWindow):
                 temp_list.append(item[i])
         return temp_list
 
+#Заполняем массив хранящий графики, всеми элементами
     def create_graphs_list(self):
-        global graphs_list
-        temp_list = self.unparse_list(values_list)
+        temp_list = self.unparse_list(self.values_list)
         for item in temp_list:
-            graphs_list.append([item])
+            self.graphs_list.append([item])
         
+#Сортируем значения, чтобы отображались последние 60 значений
     def sort_values(self):
-        global graphs_list
-        temp_list = self.unparse_list(values_list)
-        for i in range(len(graphs_list)):
-            graphs_list[i].append(temp_list[i])
-            if len(graphs_list[i]) > 60:
-                del graphs_list[i][0]
+        temp_list = self.unparse_list(self.values_list)
+        for i in range(len(self.graphs_list)):
+            self.graphs_list[i].append(temp_list[i])
+            if len(self.graphs_list[i]) > 60:
+                del self.graphs_list[i][0]
 
+#Функция, принудительно останавливающая поток при закрытии программы
     def stop_thread(self):
         self.graphs_thread.stop()
 
+#Функция, отвечающая за безопасное выключение программы
     def closeEvent(self, event):
         self.hide()
         self.graphs_thread.running = False
         self.stop_thread()
-        #self.stats_thread.wait(5000)
         super().closeEvent(event)

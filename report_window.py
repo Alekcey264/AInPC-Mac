@@ -1,7 +1,13 @@
+#Импортируем из остальных файлов проекта необходимые зависимости - классы, функции и модули
 from global_import import *
 from additional_classes import ReportThread
 
-checkbox_translations = {
+#Создаем окно отчета
+class ReportWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+#Создаем список для интерпретации ввода пользователя в символы терминала
+        self.checkbox_translations = {
             "Общая информация об устройстве": "SPHardwareDataType",
             "ATA": "SPParallelATADataType",
             "Apple Pay": "SPSecureElementDataType",
@@ -49,15 +55,12 @@ checkbox_translations = {
             "Язык и регион": "SPInternationalDataType",
         }
 
-class ReportWindow(QWidget):
-    def __init__(self):
-        super().__init__()
 
         layout = QGridLayout()        
-
+#Располагаем меню выбора пунктов отчета на окне
         row, col = 0, 0
         self.checkboxes = []
-        for key, value in checkbox_translations.items():
+        for key, value in self.checkbox_translations.items():
             checkbox = QCheckBox(key, self)
             checkbox.setChecked(True)
             if "Общая" in key:
@@ -73,6 +76,7 @@ class ReportWindow(QWidget):
                 row += 1
             self.checkboxes.append(checkbox)
 
+#Настраиваем и создаем кнопки для взаимодействия с пользователем
         self.accept_button = QPushButton('Cформировать отчет', self)
         self.fill_button = QPushButton('Выбрать все', self)
         self.remove_button = QPushButton('Отменить все', self)
@@ -84,32 +88,38 @@ class ReportWindow(QWidget):
         layout.addWidget(self.remove_button, row + 1, 2, 1, 2)  
         layout.addWidget(self.accept_button, row + 2, 0, 1, 4)  
 
+#Настраиваем вид главного окна
         self.setLayout(layout)
         self.setGeometry(300, 300, 300, 200)
         self.setWindowTitle('AInPC Отчет')
 
         self.show()
 
+#Функция, запускающая процесс обработки введеных пользователем пунктов
     def showSelectedCheckboxes(self):
-        selected_checkboxes = [checkbox_translations[checkbox.text()] for checkbox in self.checkboxes if checkbox.isChecked()]
+        selected_checkboxes = [self.checkbox_translations[checkbox.text()] for checkbox in self.checkboxes if checkbox.isChecked()]
         if selected_checkboxes:
             self.accept_button.setEnabled(False)
             self.fill_button.setEnabled(False)
             self.remove_button.setEnabled(False)
-            self.report_thread = ReportThread(selected_checkboxes, checkbox_translations)
+#Создаем и настраиваем поток получения данных о системе, подключаем "реакцию" на получение данных из потока
+            self.report_thread = ReportThread(selected_checkboxes, self.checkbox_translations)
             self.report_thread.report_thread_signal.connect(self.create_report)
             self.report_thread.start()
         else:
              QMessageBox.warning(self, "Предупреждение", "Выберите хотя бы один пункт для формирования отчета.")
 
+#Функция, обнуляющая все выборы
     def remove_checkboxes(self):
         for checkbox in self.checkboxes:
             checkbox.setChecked(False)
-        
+
+#Функция, выбирающая все варианты
     def fill_checkboxes(self):
         for checkbox in self.checkboxes:
             checkbox.setChecked(True)
 
+#Функция, создающая отчет о системе, используя данные, полученные из потока
     def create_report(self, data):
         current_time = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
         file_name = f"AInPC Report {current_time}.txt"

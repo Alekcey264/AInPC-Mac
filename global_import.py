@@ -1,32 +1,24 @@
+#Импортируем все необходимые модули из библиотеки для работы с графическим интерфейсом
 from PyQt6.QtCore import QSize, Qt, QTimer, QThread, pyqtSignal, QRegularExpression
 from PyQt6.QtWidgets import QCheckBox, QGridLayout, QLineEdit, QMessageBox, QSplashScreen, QMainWindow, QApplication, QTreeWidget, QTableWidget, QAbstractItemView, QHeaderView, QTreeWidgetItem, QTableWidgetItem, QLabel, QPushButton, QDialog, QTextEdit, QVBoxLayout, QWidget, QScrollArea, QHBoxLayout
 from PyQt6.QtGui import QPalette, QColor, QAction, QPixmap, QIcon, QRegularExpressionValidator
+#Импортируем библиотеки для работы системой, базами данных, построения графиков
 import sys, sqlite3, pyqtgraph
+#Импортируем модули для работы с операционной системой
 from os import getcwd
+#Импортируем модули для работы с системным терминалом
 from subprocess import *
+#Импортируем модули для получения данных с оперативной памяти
 from psutil import virtual_memory, disk_partitions, disk_usage
-from fetch import initialize_disks, initialize_ram, initialize_gpu, initialize_mb, initialize_cpu
+#Импортируем модуль для получения текущего времени системы
 from datetime import datetime
+#Импортируем модуль для работы с системными путями файлов
 from pathlib import Path
 
-massive_cpu_temp = []
-massive_gpu_temp = []
-massive_nand_temp = []
-massive_mb_temp = []
-root_for_timer = None
-text_for_timer = None
-cpu_cores = None
-massive_cpu_load = []
-massive_gpu_load = []
-massive_cpu_clock = []
-massive_gpu_clock = []
-massive_cpu_power = []
-massive_gpu_power = []
-physical_disks = initialize_disks()
-ram_text_info = initialize_ram()
-gpu_text_info = initialize_gpu()
-mb_text_info = initialize_mb()
-cpu_info_text = initialize_cpu()
-
+#Функция, вычисляющая среднее значение массива и округляющая его значения
 def get_average(massive):
     return round(sum(massive) / len (massive), 2)
+
+#Записываем местоположение базы данных в отдельную переменную, чтобы доступ к ней
+#можно было получить из всех частей кода
+db = getcwd() + "/aipcdb_mac.db"
