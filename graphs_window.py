@@ -64,7 +64,7 @@ class GraphsWindow(QMainWindow):
         self.create_graphs_list()
         self.create_graphs_window(data[-1])
 
-#Функция, запускающая появление  окна после процессора иницилизации
+#Функция, запускающая появление окна после процесса иницилизации
     def create_graphs_window(self, splash):
         splash.close()
 
@@ -171,7 +171,7 @@ class GraphsWindow(QMainWindow):
                 temp_list.append(item[i])
         return temp_list
 
-#Заполняем массив хранящий графики, всеми элементами
+#Заполняем массив, хранящий графики, всеми элементами
     def create_graphs_list(self):
         temp_list = self.unparse_list(self.values_list)
         for item in temp_list:

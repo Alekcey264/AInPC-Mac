@@ -3,3 +3,4 @@ __pycache__/
 /test_py.py
 fetch/temp_sensor
 /.DS_Store
+/.vscode

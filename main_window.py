@@ -121,13 +121,10 @@ class MainWindow(QMainWindow):
         elif data[1] == "GPU":
             if data[2] == "Load":
                 self.massive_gpu_load = data[0]
-                print("load", data[0])
             elif data[2] == "Clock":
                 self.massive_gpu_clock = data[0]
-                print("clock", data[0])
             elif data[2] == "Power":
                 self.massive_gpu_power = data[0]
-                print("power", data[0])
             
 #Функция, служащая для выравнивания всех ячеек в таблице справа
     def fix_table(self):
