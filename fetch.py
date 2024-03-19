@@ -101,13 +101,13 @@ def initialize_ram():
 #на русский язык
 def initialize_gpu():
     gpu = run(["system_profiler", "SPDisplaysDataType"], capture_output=True, text=True).stdout
-    gpu = gpu.replace("\n\n", "\n").replace("Chipset Model", "Чипсет").replace("Display Type", "Тип монитора").replace("Type", "Тип").replace("Bus", "Шина").replace("Built-In", "Встроенный").replace("Total Number of Cores", "Общее число ядер")
+    gpu = gpu.replace("\n\n", "\n").replace("Chipset Model", "Чипсет").replace("Display Type", "Тип монитора").replace("Connection Type", "Тип подключения").replace("Type", "Тип").replace("Bus", "Шина").replace("Built-In", "Встроенный").replace("Total Number of Cores", "Общее число ядер")
     gpu = gpu.replace("Mirror Status", "Статус видеоповтора").replace("Master Mirror", "Мастер-видеоповтор").replace("Hardware Mirror", "Аппаратный видеоповтор")
     gpu = gpu.replace("Rotation", "Поворот").replace("Supported", "Поддерживается").replace("Television", "Телевизор")
     gpu = gpu.replace("Vendor", "Производитель").replace("Metal Support", "Поддержка Metal").replace("Displays", "Дисплеи").replace("Color LCD", "Цветной ЖК-дисплей")
     gpu = gpu.replace("Resolution", "Разрешение").replace("Built-in Liquid Retina XDR Display", "Встроенный дисплей Liquid Retina XDR").replace("Yes", "Да").replace("Online", "Онлайн")
     gpu = gpu.replace("Main Display", "Основной монитор").replace("On", "Вкл.").replace("No", "Нет").replace("Mirror", "Видеоповтор").replace("Off", "Выкл.")
-    gpu = gpu.replace("Automatically Adjust Brightness", "Настраивать яркость автоматически").replace("Connection Type", "Тип подключения").replace("Internal", "Внутренний")
+    gpu = gpu.replace("Automatically Adjust Brightness", "Настраивать яркость автоматически").replace("Internal", "Внутренний")
     gpu = gpu.split("\n")
     gpu = gpu[1:-1]
     return gpu
