@@ -1,15 +1,21 @@
-#Импортируем из остальных файлов проекта необходимые зависимости - классы, функции и модули
-from global_import import *
+from PyQt6.QtWidgets import QLabel
+from PyQt6.QtCore import QThread, pyqtSignal
+from subprocess import Popen, PIPE, run
+from os import getcwd
+from pathlib import Path
+from psutil import virtual_memory
 
-#Класс для отображения и корректной работы гиперссылок на сайте производителя
+
+# Класс для отображения и корректной работы гиперссылок на сайте производителя
 class HyperlinkLabel(QLabel):
     def __init__(self, text, link):
         super().__init__()
         self.setText(f'<a href="{link}">{text}</a>')
         self.setOpenExternalLinks(True)
 
-#Класс, описывающий работу потока, опрашивающего систему на предмет загрузки, частоты и напряжения компонентов
-#пока не будет отключен
+
+# Класс, описывающий работу потока, опрашивающего систему на предмет загрузки, частоты и напряжения компонентов
+# пока не будет отключен
 class StatsThread(QThread):
     stats_signal = pyqtSignal(list)
     def __init__(self, password):
@@ -18,13 +24,13 @@ class StatsThread(QThread):
         self.type_of_info = None
         self.password = password
 
-#Функция, изменающая тип собираемых данных
+# Функция, изменающая тип собираемых данных
     def set_type(self, root, text):
         self.root = root
         self.text = text
         
-#Функция, запускающаяся при старте потока, собирает данные в зависимости от указанного типа.
-#После того, как данные готовы, компанует и передает их
+# Функция, запускающаяся при старте потока, собирает данные в зависимости от указанного типа.
+# После того, как данные готовы, компанует и передает их
     def run(self):
         self.running = True
         while self.running:
@@ -64,12 +70,13 @@ class StatsThread(QThread):
                     container = [filtered_lines, self.root, self.text]
                     self.stats_signal.emit(container)
 
-#Функция, принудительно останавливающая поток
+# Функция, принудительно останавливающая поток
     def stop(self):
         self.terminate()
 
-#Класс, описывающий работу потока инициализации, который проверяет, что все необходимые файлы и зависимости созданы.
-#Если их нет, то создает их, единожды опрашивает все нужные датчики и передает данные
+
+# Класс, описывающий работу потока инициализации, который проверяет, что все необходимые файлы и зависимости созданы.
+# Если их нет, то создает их, единожды опрашивает все нужные датчики и передает данные
 class InitializingThread(QThread):
     init_signal = pyqtSignal(list)
     def __init__(self, splash, password):
@@ -77,7 +84,7 @@ class InitializingThread(QThread):
         self.splash = splash
         self.password = password
 
-#Функция, запускающая при старте потока, собирает данные со всех доступных датчиков системы
+# Функция, запускающая при старте потока, собирает данные со всех доступных датчиков системы
     def run(self):
         file_path = Path(getcwd() + '/fetch/temp_sensor')
         if not file_path.exists():
@@ -97,7 +104,7 @@ class InitializingThread(QThread):
         container = [list_of_cpu_load, list_of_cpu_clock, list_of_cpu_power, list_of_gpu_load, list_of_gpu_clock, list_of_gpu_power, self.splash]
         self.init_signal.emit(container)
 
-#Класс, описывающий работу потока, собирающего данные для графической интерпретации
+# Класс, описывающий работу потока, собирающего данные для графической интерпретации
 class GraphsThread(QThread):
     graphs_signal = pyqtSignal(list)
     def __init__(self, password):
@@ -105,7 +112,7 @@ class GraphsThread(QThread):
         self.running = False
         self.password = password
 
-#Функция, собирающая информацию о температурных показателях устройства
+# Функция, собирающая информацию о температурных показателях устройства
     def fetch_sensors_for_graphs(self):
         process = Popen("./fetch/temp_sensor", shell=True, stdout=PIPE, text=True)
         first_output = process.stdout.readline()
@@ -154,8 +161,13 @@ class GraphsThread(QThread):
                 list_for_nums.append(inner_item[1])
             temp_list.append(list_for_nums)
         return temp_list
+    
+# Функция, вычисляющая среднее значение массива и округляющая его значения   
+    def get_average(self, massive):
+        return round(sum(massive) / len (massive), 2)
+  
 
-#Функция, собирающая информацию о показателях загрузки, частоты и напряжении на компонентах
+# Функция, собирающая информацию о показателях загрузки, частоты и напряжении на компонентах
     def fetch_terminal_for_graphs(self):
         command = "sudo -S powermetrics -n1 --samplers cpu_power,gpu_power"
         process = Popen(command, shell = True, stdin = PIPE, stdout = PIPE, stderr = PIPE, universal_newlines = True)
@@ -170,13 +182,13 @@ class GraphsThread(QThread):
         temp_list.append([[float(line[line.find(":") + 1 : line.find("mW")].strip()) for line in lines if "GPU Power" in line][0]])
         return temp_list
 
-#Функция, получающая данные о работе оперативной памяти
+# Функция, получающая данные о работе оперативной памяти
     def fetch_memory(self):
         ram_info = virtual_memory()
         return ram_info[2]
 
-#Функция, запускающаяся при старте потока, запускает функции для получения данных с датчиков.
-#После того, как данные получены, компанует и передает их
+# Функция, запускающаяся при старте потока, запускает функции для получения данных с датчиков.
+# После того, как данные получены, компанует и передает их
     def run(self):
         self.running = True
         while self.running:
@@ -186,14 +198,15 @@ class GraphsThread(QThread):
             memory = self.fetch_memory()
             sensors[1] = [sensors[1][i // 2] for i in range(len(sensors[1]) * 2)]
             container = [sensors[0][:-1], [sensors[0][-1]], terminal[1], terminal[0], terminal[2], sensors[1], terminal[4], terminal[3], terminal[5], 
-                        [memory], [get_average(sensors[3])], [get_average(sensors[4])], sensors[5]]
+                        [memory], [self.get_average(sensors[3])], [self.get_average(sensors[4])], sensors[5]]
             self.graphs_signal.emit(container)
 
-#Функция, принудительно останавливающая поток
+# Функция, принудительно останавливающая поток
     def stop(self):
         self.terminate()
 
-#Класс, описывающий работу потока, который собирает начальные данные для графиков
+
+# Класс, описывающий работу потока, который собирает начальные данные для графиков
 class InitializingGraphsThread(QThread):
     initializing_graphs_signal = pyqtSignal(list)
     def __init__(self, splash, password):
@@ -201,7 +214,7 @@ class InitializingGraphsThread(QThread):
         self.splash = splash
         self.password = password
 
-#Функция, собирающая температурные показатели с устройства для графиков
+# Функция, собирающая температурные показатели с устройства для графиков
     def fetch_sensors_for_graphs(self):
         process = Popen("./fetch/temp_sensor", shell=True, stdout=PIPE, text=True)
         first_output = process.stdout.readline()
@@ -251,7 +264,7 @@ class InitializingGraphsThread(QThread):
             temp_list.append(list_for_nums)
         return temp_list
 
-#Функция, собирающая информацию о показателях загрузки, частоты и напряжении на компонентах для графиков
+# Функция, собирающая информацию о показателях загрузки, частоты и напряжении на компонентах для графиков
     def fetch_terminal_for_graphs(self):
         command = "sudo -S powermetrics -n1 --samplers cpu_power,gpu_power"
         process = Popen(command, shell = True, stdin = PIPE, stdout = PIPE, stderr = PIPE, universal_newlines = True)
@@ -266,13 +279,17 @@ class InitializingGraphsThread(QThread):
         temp_list.append([[float(line[line.find(":") + 1 : line.find("mW")].strip()) for line in lines if "GPU Power" in line][0]])
         return temp_list
     
-#Функция, получающая данные о работе оперативной памяти
+# Функция, получающая данные о работе оперативной памяти
     def fetch_memory(self):
         ram_info = virtual_memory()
         return ram_info[2]
+    
+# Функция, вычисляющая среднее значение массива и округляющая его значения   
+    def get_average(self, massive):
+        return round(sum(massive) / len (massive), 2)
 
-#Функция, запускающаяся при старте потока, запускает функции для получения данных с датчиков.
-#После того, как данные получены, компанует и передает их в формате, нужном для графиков
+# Функция, запускающаяся при старте потока, запускает функции для получения данных с датчиков.
+# После того, как данные получены, компанует и передает их в формате, нужном для графиков
     def run(self):
         container = []
         sensors = self.fetch_sensors_for_graphs()
@@ -280,18 +297,18 @@ class InitializingGraphsThread(QThread):
         memory = self.fetch_memory()
         sensors[1] = [sensors[1][i // 2] for i in range(len(sensors[1]) * 2)]
         container = [sensors[0][:-1], [sensors[0][-1]], terminal[1], terminal[0], terminal[2], sensors[1], terminal[4], terminal[3], terminal[5], 
-                     [memory], [get_average(sensors[3])], [get_average(sensors[4])], sensors[5]]
+                     [memory], [self.get_average(sensors[3])], [self.get_average(sensors[4])], sensors[5]]
         container.extend([self.splash])
         self.initializing_graphs_signal.emit(container)
    
-#Сенсоры - Процессор, видеокарта, левое, правое, батарея, NAND
-#Терминал - Загрузка ЦПУ, Частота ЦПУ, Напряжение ЦПУ, Загрузка ГПУ, Частота ГПУ, Напряжение ГПУ
+# Сенсоры - Процессор, видеокарта, левое, правое, батарея, NAND
+# Терминал - Загрузка ЦПУ, Частота ЦПУ, Напряжение ЦПУ, Загрузка ГПУ, Частота ГПУ, Напряжение ГПУ
 
-#[Температура процессора] -> [Температура видеокарты] -> [Левое вентиляционное отверстие] -> [Правое вентиляционное отверстие] ->
-#[Батарея] -> [NAND чип] -> [Загрузка процессора] -> [Частота процессора] -> [Напряжение на процессоре] -> [Загрузка видеокарты]
-#[Частота видеокарты] -> [Напряжение на видеокарте]
+# [Температура процессора] -> [Температура видеокарты] -> [Левое вентиляционное отверстие] -> [Правое вентиляционное отверстие] ->
+# [Батарея] -> [NAND чип] -> [Загрузка процессора] -> [Частота процессора] -> [Напряжение на процессоре] -> [Загрузка видеокарты]
+# [Частота видеокарты] -> [Напряжение на видеокарте]
 
-#Класс, описывающий работу потока, собирающего данные для отчета
+# Класс, описывающий работу потока, собирающего данные для отчета
 class ReportThread(QThread):
     report_thread_signal = pyqtSignal(str)
     def __init__(self, params, book):
@@ -299,7 +316,7 @@ class ReportThread(QThread):
         self.params = params
         self.book = book
 
-#Функция, активирующаяся при старте потока, перебирает данные по всем пунктам, выбранным пользователем
+# Функция, активирующаяся при старте потока, перебирает данные по всем пунктам, выбранным пользователем
     def run(self):
         output = ""
         for item in self.params:

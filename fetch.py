@@ -1,8 +1,12 @@
-from global_import import *
-from subprocess import Popen, PIPE, check_output, call
+import sqlite3
 
-#Функция, получающая данные о температуре процессора, видеокарты и чипа SSD,
-#и помещает эти данные в указанный массив
+from subprocess import Popen, PIPE, run
+from os import getcwd
+
+DB = getcwd() + "/aipcdb_mac.db"
+
+# Функция, получающая данные о температуре процессора, видеокарты и чипа SSD,
+# и помещает эти данные в указанный массив
 def fetch_sensors(type_of_sensor, massive):
     massive.clear()
     process = Popen("./fetch/temp_sensor", shell=True, stdout = PIPE, text=True)
@@ -35,8 +39,8 @@ def fetch_sensors(type_of_sensor, massive):
         sorted_data = unique_result
     massive += sorted_data
 
-#Функция, получающая данные о температуре материнской платы и помещающая эти данные
-#в указанный массив
+# Функция, получающая данные о температуре материнской платы и помещающая эти данные
+# в указанный массив
 def fetch_sensors_mb_temp(massive):
     massive.clear()
     process = Popen("./fetch/temp_sensor", shell=True, stdout = PIPE, text=True)
@@ -75,8 +79,8 @@ def fetch_sensors_mb_temp(massive):
     sorted_data.append(["TPg", g_sum / g_len])
     massive += sorted_data
 
-#Функция, получающая из системы данные о физических дисках и переводящая эту информацию
-#на русский язык
+# Функция, получающая из системы данные о физических дисках и переводящая эту информацию
+# на русский язык
 def initialize_disks():
     disks = run(["system_profiler", "SPNVMeDataType"], capture_output=True, text=True).stdout
     disks = disks.replace("\n\n", "\n").replace("Capacity", "Емкость").replace("TRIM Support", "Поддержка TRIM").replace("GB", "Гб").replace("bytes", "бит")
@@ -88,8 +92,8 @@ def initialize_disks():
     disks = disks[:-1]
     return disks
 
-#Функция, получающая из системы данные об оперативной и переводящая эту информацию
-#на русский язык
+# Функция, получающая из системы данные об оперативной и переводящая эту информацию
+# на русский язык
 def initialize_ram():
     ram = run(["system_profiler", "SPMemoryDataType"], capture_output=True, text=True).stdout
     ram = ram.replace("\n\n", "\n").replace("Memory", "Объем памяти").replace("Type", "Тип").replace("GB", "Гб").replace("Manufacturer", "Производитель")
@@ -97,8 +101,8 @@ def initialize_ram():
     ram = ram[1:-1]
     return ram
 
-#Функция, получающая из системы данные о видеокарте и переводящая эту информацию
-#на русский язык
+# Функция, получающая из системы данные о видеокарте и переводящая эту информацию
+# на русский язык
 def initialize_gpu():
     gpu = run(["system_profiler", "SPDisplaysDataType"], capture_output=True, text=True).stdout
     gpu = gpu.replace("\n\n", "\n").replace("Chipset Model", "Чипсет").replace("Display Type", "Тип монитора").replace("Connection Type", "Тип подключения").replace("Type", "Тип").replace("Bus", "Шина").replace("Built-In", "Встроенный").replace("Total Number of Cores", "Общее число ядер")
@@ -112,8 +116,8 @@ def initialize_gpu():
     gpu = gpu[1:-1]
     return gpu
 
-#Функция, получающая из системы данные о материнской плате и переводящая эту информацию
-#на русский язык
+# Функция, получающая из системы данные о материнской плате и переводящая эту информацию
+# на русский язык
 def initialize_mb():
     mb = run(["system_profiler", "SPHardwareDataType"], capture_output=True, text=True).stdout
     mb = mb.replace("\n\n", "\n").replace("Model Name", "Название модели").replace("Model Identifier", "Идентификатор модели").replace("Model Number", "Номер модели").replace("Chip", "Чип")
@@ -126,7 +130,7 @@ def initialize_mb():
     mb = [item for item in mb if ("Чип: " not in item and "Общее число ядер: " not in item and "Память: " not in item)]
     return mb
 
-#Функция, получающая из базы данных информацию о процессоре
+# Функция, получающая из базы данных информацию о процессоре
 def initialize_cpu():
     cpu_info = run('system_profiler SPHardwareDataType | grep -E "Chip|Total Number of Cores"', shell=True, capture_output=True, text=True).stdout.split("\n")
     cpu_info = cpu_info[:-1]
@@ -135,7 +139,7 @@ def initialize_cpu():
     count_of_p_cores = cpu_info[1][cpu_info[1].index("(") + 1:cpu_info[1].index("performance") - 1].strip()
     count_of_e_cores = cpu_info[1][cpu_info[1].index("and ") + 3:cpu_info[1].index("efficiency")].strip()
     try:
-        conn = sqlite3.connect(db)
+        conn = sqlite3.connect(DB)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM cpu_info WHERE cpu_name = ? and cpu_count_of_p_cores = ? and cpu_count_of_e_cores = ?", (name, count_of_p_cores, count_of_e_cores))
         return cursor.fetchone()
